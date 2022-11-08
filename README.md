@@ -6,14 +6,14 @@ This language does not work yet - only lexer and unfinished parser are available
 
 ## Milestones
 
-[x] Lexer
-[x] Error Formatting
-[ ] Parser (WIP)
-[ ] Type Checking
-[ ] Compiler
-[ ] Standard Library
-[ ] Optimized
-[ ] Self-Hosted
+- [x] Lexer
+- [x] Error Formatting
+- [ ] Parser (WIP)
+- [ ] Type Checking
+- [ ] Compiler
+- [ ] Standard Library
+- [ ] Optimized
+- [ ] Self-Hosted
 
 ## Examples
 
