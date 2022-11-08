@@ -1,6 +1,6 @@
 # Core
 
-(WIP) A general-purpose programming language programming language with no keywords
+A general-purpose programming language with no keywords (WIP)
 
 This language does not work yet - only lexer and unfinished parser are available.
 
