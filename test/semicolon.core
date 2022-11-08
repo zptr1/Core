@@ -1,0 +1,5 @@
+// Problem:
+// Current version of parser does not require semicolons
+// and parses expressions weirdly, allowing such weird code:
+
+32 a = 69 32 b = 42 c = 69 + 42;

@@ -1,0 +1,2 @@
+#!/usr/bin/env /usr/bin/bash
+node src/index $@

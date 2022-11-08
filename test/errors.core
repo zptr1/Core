@@ -1,0 +1,20 @@
+// Error Message Formatter Test
+
+32 test = 69420;
+
+0 test {
+  32 asd;
+  io:puts "Hello, world!");
+  2 qwe =;
+  2 ++ 2 -;
+  :wqe;!qweadsad....
+
+  // FIXME: the following lines should error but they dont
+  1 2 3 4 5;
+  1337(2);
+  qwe
+  io:puts:"asdsad";
+  qwe asd fgh;
+}
+
+qwee "whoops!" 123;

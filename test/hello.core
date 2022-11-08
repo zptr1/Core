@@ -1,0 +1,4 @@
+< io;
+0 main {
+  io:puts("Hello world");
+}
