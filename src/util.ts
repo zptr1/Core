@@ -1,5 +1,5 @@
 import { xtermSupported } from "cli-color";
-
+export type Nullable<T> = T | null;
 export function hsv2rgb(h: number, s: number, v: number) {
   (s = s / 100), (v = v / 100);
   let f = (n: number, k = (n + h / 60) % 6) =>

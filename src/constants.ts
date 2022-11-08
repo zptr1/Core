@@ -1,84 +1,64 @@
-import { Enum } from "./util.js";
+import { Operator } from "./ast";
+import { Nullable } from "./util";
 
-export const Token = Enum(
-  "Int",
-  "Float",
-  "String",
-  "Identifier",
+export enum Token {
+  Int,
+  Float,
+  String,
+  Identifier,
 
-  "Plus",
-  "Minus",
-  "Asterisk",
-  "Slash",
-  "LParen",
-  "RParen",
-  "LBracket",
-  "RBracket",
-  "LCurly",
-  "RCurly",
-  "Bang",
-  "At",
-  "Hash",
-  "Dollar",
-  "Percent",
-  "Caret",
-  "Ampersand",
-  "Equals",
-  "VerticalBar",
-  "Dot",
-  "Comma",
-  "LCaret",
-  "RCaret",
-  "Semicolon",
-  "Colon",
-  "Tilde",
-  "Question",
+  Plus,
+  Minus,
+  Asterisk,
+  Slash,
+  LParen,
+  RParen,
+  LBracket,
+  RBracket,
+  LCurly,
+  RCurly,
+  Bang,
+  At,
+  Hash,
+  Dollar,
+  Percent,
+  Caret,
+  Ampersand,
+  Equals,
+  VerticalBar,
+  Dot,
+  Comma,
+  LCaret,
+  RCaret,
+  Semicolon,
+  Colon,
+  Tilde,
+  Question,
 
-  "Assert",
-  "DoubleEq",
-  "NotEq",
-  "LtEq",
-  "GtEq",
-  "And",
-  "Or"
-);
+  DoubleEq,
+  NotEq,
+  LtEq,
+  GtEq,
+  And,
+  Or
+}
 
-export const Op = Enum(
-  "Add",
-  "Sub",
-  "Mul",
-  "Div",
-  "GtEq",
-  "LtEq",
-  "Eq",
-  "Gt",
-  "Lt",
-  "NotEq",
-  "And",
-  "Or",
-  "If"
-);
-
-export const OpTokenMap = {
-  [Token.Add]: Op.Add,
-  [Token.Sub]: Op.Sub,
-  [Token.Mul]: Op.Mul,
-  [Token.Div]: Op.Div,
-  [Token.GtEq]: Op.GtEq,
-  [Token.LtEq]: Op.LtEq,
-  [Token.DoubleEq]: Op.Eq,
-  [Token.LCaret]: Op.Lt,
-  [Token.RCaret]: Op.Gt,
-  [Token.NotEq]: Op.NotEq,
-  [Token.And]: Op.And,
-  [Token.Or]: Op.Or,
-};
-
-export const EscapeChars = {
-  n: "\n",
-  r: "\r",
-  t: "\t",
-};
+export function operator(token: Token) : Nullable<Operator> {
+  switch(token) {
+    case Token.Plus: return Operator.Add;
+    case Token.Minus: return Operator.Sub;
+    case Token.Asterisk: return Operator.Mul;
+    case Token.Slash: return Operator.Div;
+    case Token.LCaret: return Operator.Lt;
+    case Token.RCaret: return Operator.Gt;
+    case Token.LtEq: return Operator.LtEq;
+    case Token.GtEq: return Operator.GtEq;
+    case Token.DoubleEq: return Operator.Eq;
+    case Token.And: return Operator.And;
+    case Token.Or: return Operator.Or;
+    default: return null;
+  }
+}
 
 export const CharTokenMap = {
   "+": Token.Plus,
@@ -94,7 +74,7 @@ export const CharTokenMap = {
   "!": Token.Bang,
   "@": Token.At,
   "#": Token.Hash,
-  $: Token.Dollar,
+  "$": Token.Dollar,
   "%": Token.Percent,
   "^": Token.Caret,
   "&": Token.Ampersand,
