@@ -1,33 +1,14 @@
-import cl from "cli-color";
+import { xtermSupported } from "cli-color";
 
-/**
- * Create enum
- * @template {string} T
- * @param {T[]} values
- * @returns {{[K in T]: number}}
- */
-export function Enum(...values) {
-  const obj = {};
-
-  let i = 0;
-  for (const value of values) {
-    obj[i] = value;
-    obj[value] = i++;
-  }
-
-  return obj;
-}
-
-// for error formatter
-export function hsv2rgb(h, s, v) {
+export function hsv2rgb(h: number, s: number, v: number) {
   (s = s / 100), (v = v / 100);
-  let f = (n, k = (n + h / 60) % 6) =>
+  let f = (n: number, k = (n + h / 60) % 6) =>
     v - v * s * Math.max(Math.min(k, 4 - k, 1), 0);
   return [f(5), f(3), f(1)].map((x) => ~~(x * 255));
 }
 
-export function rgb(r, g, b) {
-  return cl.xtermSupported
-    ? (text) => `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`
+export function rgb(red: number, green: number, blue: number): (input: string) => string {
+  return xtermSupported
+    ? (text) => `\x1b[38;2;${red};${green};${blue}m${text}\x1b[0m`
     : (text) => text;
 }
