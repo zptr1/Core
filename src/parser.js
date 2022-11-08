@@ -5,6 +5,7 @@ import {
   Expression,
   Fn,
   Identifier,
+  IfInner,
   Import,
   TopLevel,
   Var,
@@ -114,7 +115,7 @@ export class Parser {
   _readCond() {
     const left = this._readAtom();
     const peek = this.peek();
-
+  
     if (peek?.kind in OpTokenMap) {
       this.next();
       const right = this._readAdd();
@@ -125,7 +126,7 @@ export class Parser {
         [left.span[0], right.span[1]],
         OpTokenMap[peek.kind],
         left,
-        this._readAdd()
+        right
       );
     }
 
@@ -140,7 +141,12 @@ export class Parser {
       case Token.Float:
       case Token.String:
         this.next();
-        return new Atom(token.span, formatType(token.kind), token.value);
+        const atom = new Atom(token.span, formatType(token.kind), token.value);
+        if (this.peek(2)?.kind == Token.Colon) {
+          return this._readIdentifier(atom);
+        } else {
+          return atom;
+        }
       case Token.Identifier:
         return this._readIdentifier();
       default:
@@ -149,6 +155,34 @@ export class Parser {
           .ln(...this.span(token), `expected atom`)
           .raise();
     }
+  }
+
+  _readIf() {
+    const inner = new IfInner();
+
+    if (this.peek()?.kind == Token.LCurly) {
+      this.next();
+      inner.ifTrue = this.parseBlock();
+    } else {
+      inner.ifTrue = this.parseExpr();
+    }
+
+    if (this.peek()?.kind == Token.Colon) {
+      this.next();
+      if (this.peek()?.kind == Token.LCurly) {
+        this.next();
+        inner.ifFalse = this.parseBlock();
+      } else {
+        inner.ifFalse = this.parseExpr();
+      }
+    }
+
+    inner.span = [
+      inner.ifTrue?.span?.[0],
+      (inner.ifFalse || inner.ifTrue)?.span?.[1],
+    ];
+
+    return inner;
   }
 
   _readIdentifier() {
@@ -172,7 +206,6 @@ export class Parser {
   }
 
   parseExpr(paren = false) {
-    // parse expression (math, fn call, if etc)
     const expr = [];
 
     for (const token of this.read()) {
@@ -181,6 +214,15 @@ export class Parser {
       switch (token.kind) {
         case Token.RParen:
           if (paren) return expr;
+          else {
+            new CError("invalid expression")
+              .src(this.file, this.src)
+              .ln(
+                ...this.span(token),
+                "unexpected RParen (perhabs you forgot to open parentheses)"
+              )
+              .raise();
+          }
 
         case Token.Semicolon:
           return expr;
@@ -227,10 +269,42 @@ export class Parser {
           this.i--;
           const e = this._readAdd();
 
-          if (this.peek().kind == Token.Colon) {
-            expr.push(this._readIdentifier(e));
-          } else expr.push(e);
+          if (this.peek()?.kind == Token.Question) {
+            this.next();
+            const inner = new IfInner();
 
+            if (this.peek()?.kind == Token.LCurly) {
+              this.next();
+              inner.ifTrue = this.parseBlock();
+            } else {
+              inner.ifTrue = this.parseExpr();
+            }
+
+            if (this.peek()?.kind == Token.Colon) {
+              this.next();
+              if (this.peek()?.kind == Token.LCurly) {
+                this.next();
+                inner.ifFalse = this.parseBlock();
+              } else {
+                inner.ifFalse = this.parseExpr();
+              }
+            }
+
+            inner.span = [
+              inner.ifTrue?.span?.[0],
+              (inner.ifFalse || inner.ifTrue)?.span?.[1],
+            ];
+          
+            expr.push(
+              new Expression(
+                [e.span[0], inner.span[1]],
+                Op.If,
+                e, inner
+              )
+            );
+          } else {
+            expr.push(e);
+          }
           break;
         case Token.LParen:
           expr.push(this.parseExpr(true));
@@ -248,6 +322,8 @@ export class Parser {
             .raise();
       }
 
+      if (expr.length > 0 && !paren) return expr;
+      if (this.peek()?.kind == Token.Semicolon && !paren) break;
       if (this.peek()?.kind == Token.RCurly) break;
     }
 

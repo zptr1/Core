@@ -55,7 +55,8 @@ export const Op = Enum(
   "Lt",
   "NotEq",
   "And",
-  "Or"
+  "Or",
+  "If"
 );
 
 export const OpTokenMap = {

@@ -71,3 +71,12 @@ export class Atom extends Ast {
     this.value = value;
   }
 }
+
+export class IfInner extends Ast {
+  constructor (span, ifTrue, ifFalse) {
+    super(span);
+
+    this.ifTrue = ifTrue;
+    this.ifFalse = ifFalse;
+  }
+}
