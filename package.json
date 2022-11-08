@@ -7,5 +7,8 @@
     "cli-color": "^2.0.3",
     "line-column": "^1.0.2",
     "toml": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.8.4"
   }
 }

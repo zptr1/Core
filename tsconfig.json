@@ -1,0 +1,11 @@
+{
+  "include": ["src/*"],
+  "compilerOptions": {
+    "outDir": "dist",
+    "target": "ESNext",
+    "incremental": true,
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "removeComments": true
+  }
+}
