@@ -2,7 +2,9 @@
 
 (WIP) A general-purpose programming language programming language with no keywords
 
-This language does not work yet - only lexer and unfinished parser are available. However, feel free to contribute, I would appreciate that!
+This language does not work yet - only lexer and unfinished parser are available.
+
+However, feel free to contribute if you'd like to! 
 
 ## Milestones
 
