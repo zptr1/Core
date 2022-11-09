@@ -190,10 +190,10 @@ export default class Lexer {
       } else if (char == "!" && next == "=") {
         this.token(Token.NotEq);
         this.next();
-      } else if (CharTokenMap[char]) this.token(CharTokenMap[char]);
-      else if (char == '"') this.readString();
+      } else if (char == '"') this.readString();
       else if (char.match(/\d/) || (char == "." && next.match(/\d/)))
         this.readNumber();
+      else if (CharTokenMap[char]) this.token(CharTokenMap[char]);
       else if (char.match(/[a-zA-Z_]/)) this.readIdentifier();
       else {
         if (

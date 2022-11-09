@@ -34,11 +34,12 @@ export class Var extends Ast {
 }
 
 export class Fn extends Ast {
-  constructor(span, type, name, expr = [], macro = false) {
+  constructor(span, type, name, args = [], expr = [], macro = false) {
     super(span);
 
     this.type = type;
     this.name = name;
+    this.args = args;
     this.expr = expr;
     this.macro = macro;
   }
@@ -94,5 +95,24 @@ export class List extends Ast {
     super(span);
 
     this.list = list;
+  }
+}
+
+export class FnArg extends Ast {
+  constructor (span, type, name, defaultValue = null) {
+    super(span);
+
+    this.type = type;
+    this.name = name;
+    this.defaultValue = defaultValue;
+  }
+}
+
+export class Type extends Ast {
+  constructor (span, name, value) {
+    super(span);
+
+    this.name = name;
+    this.value = value;
   }
 }

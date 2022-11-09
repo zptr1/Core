@@ -5,11 +5,13 @@ import {
   Block,
   Expression,
   Fn,
+  FnArg,
   Identifier,
   IfInner,
   Import,
   List,
   TopLevel,
+  Type,
   Var,
 } from "./ast.js";
 import lineColumn from "line-column";
@@ -43,8 +45,8 @@ export class Parser {
   peek(c = 1) {
     return this.tokens[this.i + c - 1];
   }
-  
-  current () {
+
+  current() {
     return this.peek(0) || this.peek(-1);
   }
 
@@ -191,6 +193,9 @@ export class Parser {
   }
 
   readVar(token, mut = false) {
+    if (token instanceof Identifier)
+      this.i--;
+
     const name = this.next();
 
     if (this.peek()?.kind != Token.Semicolon) {
@@ -287,7 +292,7 @@ export class Parser {
         .ln(...this.span(start), `parentheses were never closed`)
         .ln(...this.span(this.current()), "EOF", "note")
         .raise();
-    
+
     list.span = [start.span[0], this.current().span[1]];
     this.next();
 
@@ -299,7 +304,9 @@ export class Parser {
 
     if (Types.includes(token.kind) && this.peek()?.kind == Token.Identifier) {
       return this.readVar(
-        token.kind == Token.Identifier ? this.readIdentifier(token) : token
+        token.kind == Token.Identifier
+          ? this.readIdentifier(token.value)
+          : token
       );
     } else if (
       token.kind == Token.Asterisk &&
@@ -308,7 +315,7 @@ export class Parser {
     ) {
       const type = this.next();
       return this.readVar(
-        type.kind == Token.Identifier ? this.readIdentifier(type) : type,
+        type.kind == Token.Identifier ? this.readIdentifier(type.value) : type,
         true
       );
     } else if (AtomTypes.includes(token.kind)) {
@@ -443,7 +450,93 @@ export class Parser {
     return block;
   }
 
+  readFuncArgs() {
+    const list = new List();
+    const start = this.current();
+    let closed = false;
+    let token;
+
+    while ((token = this.peek())) {
+      if (token.kind == Token.RParen) {
+        closed = true;
+        break;
+      }
+
+      const type = this.next();
+
+      if (!Types.includes(type.kind)) {
+        new CError("invalid syntax")
+          .src(this.file, this.src)
+          .ln(...this.span(type), `expected type, got ${Token[type.kind]}`)
+          .raise();
+      } else {
+        const arg = new FnArg();
+
+        arg.type =
+          type.kind == Token.Identifier
+            ? this.readIdentifier(type.value)
+            : formatType(type.kind, type.value);
+        
+        if (arg.type instanceof Identifier)
+          this.i--;
+
+        const name = this.next();
+
+        if (name.kind != Token.Identifier) {
+          new CError("invalid syntax")
+            .src(this.file, this.src)
+            .ln(...this.span(name), "expected identifier")
+            .raise();
+        } else {
+          arg.name = name.value;
+
+          if (this.peek()?.kind == Token.Equals) {
+            this.next();
+            arg.defaultValue = this.readExpr();
+          }
+
+          arg.span = [type.span?.[0], this.current()?.span?.[1]];
+          list.list.push(arg);
+        }
+      }
+
+      if (!this.peek()) {
+        new CError("invalid syntax")
+          .src(this.file, this.src)
+          .ln(...this.span(start), `parentheses were never closed`)
+          .ln(...this.span(this.current()), "EOF", "note")
+          .raise();
+        break;
+      } else if (this.peek().kind == Token.RParen) {
+        closed = true;
+        break;
+      } else if (this.peek().kind != Token.Comma) {
+        new CError("invalid syntax")
+          .src(this.file, this.src)
+          .ln(...this.span(this.peek()), `expected Comma or RParen`)
+          .raise();
+      }
+
+      this.next();
+    }
+
+    if (!closed)
+      new CError("invalid syntax")
+        .src(this.file, this.src)
+        .ln(...this.span(start), `parentheses were never closed`)
+        .ln(...this.span(this.current()), "EOF", "note")
+        .raise();
+
+    list.span = [start.span[0], this.current().span[1]];
+    this.next();
+
+    return list;
+  }
+
   readFunc(type, macro = false) {
+    if (type instanceof Identifier)
+      this.i--;
+    
     const func = new Fn();
     const start = this.current();
 
@@ -461,7 +554,15 @@ export class Parser {
           .ln(...this.span(token), "macro function cannot have arguments")
           .raise();
       } else {
-        todo;
+        func.args = this.readFuncArgs();
+
+        if (this.next()?.kind != Token.LCurly)
+          return new CError("invalid syntax")
+            .src(this.file, this.src)
+            .ln(...this.span(token), `expected LCurly`)
+            .raise();
+
+        func.expr = this.readBlock();
       }
     } else if (token.kind == Token.LCurly) {
       func.expr = this.readBlock();
@@ -474,6 +575,32 @@ export class Parser {
     func.span = [start.span[0] - macro, this.current()?.span?.[1]];
 
     return func;
+  }
+
+  readType() {
+    const type = new Type();
+    const start = this.current();
+    const name = this.next();
+    
+    if (name?.kind != Token.Identifier) {
+      return new CError("invalid syntax")
+        .src(this.file, this.src)
+        .ln(...this.span(name), 'expected Identifier')
+        .raise();
+    }
+
+    if (this.next()?.kind != Token.Equals) {
+      return new CError("invalid syntax")
+        .src(this.file, this.src)
+        .ln(...this.span(), "expected '='")
+        .raise();
+    }
+
+    type.name = name.value;
+    type.value = this.readExpr();
+    type.span = [start.span?.[0], this.current()?.span?.[1]];
+
+    return type;
   }
 
   readImport() {
@@ -542,6 +669,8 @@ export class Parser {
       );
     } else if (token.kind == Token.Caret) {
       return this.readImport();
+    } else if (token.kind == Token.Dollar) {
+      return this.readType();
     } else {
       return new CError("invalid syntax")
         .src(this.file, this.src)
@@ -570,7 +699,7 @@ export class Parser {
           .ln(...this.span(this.current()), "missing semicolon?")
           .raise();
       } else if (this.peek()?.kind == Token.Semicolon) this.next();
-      
+
       handleErrors();
     }
 
