@@ -1,7 +1,5 @@
 // Error Message Formatter Test
 
-32 test = 69420;
-
 0 test {
   32 asd;
   io:puts "Hello, world!");
