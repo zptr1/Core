@@ -14,20 +14,37 @@ However, feel free to contribute if you'd like to!
 - [ ] Type Checking
 - [ ] Compiler
 - [ ] Standard Library
+- [ ] Package Manager
 - [ ] Optimized
 - [ ] Self-Hosted
+
+### Parser Progress
+
+* [x] top-level
+* [x] functions, imports, constants
+* [x] expressions
+* [x] variable declarations
+* [x] function calls
+* [x] if
+* [x] macros
+* [x] mutable variables
+* [ ] type declarations
+* [ ] list variables
+* [ ] function arguments
+* [ ] loops (aka inline macros)
+* [ ] idk i forgor
 
 ## Examples
 
 ```
-< io;
+^ io;
 0 main {
   io:puts("Hello, World!");
 }
 ```
 
 ```
-< io;
+^ io;
 0 main {
   "" name = io:prompt("Enter your name: ");
   32 age = io:prompt("Enter your age: "):as_i32();
@@ -37,7 +54,7 @@ However, feel free to contribute if you'd like to!
 ```
 
 ```
-< io;
+^ io;
 0 main {
   16 i = 0;
 

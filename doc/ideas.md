@@ -1,6 +1,6 @@
 # Constants and variables
 ```
-< io;
+^ io;
 32 FUNNI_NUMBER = 69420;
 0 main {
   32 anothr_funni_numbr = 1337;
@@ -10,7 +10,7 @@
 
 # Mutable variables
 ```
-< io;
+^ io;
 0 main {
   *32 i = 0;
   
@@ -27,7 +27,7 @@
   "" inp = io:prompt();
   
   inp == "1" ? {
-    loop: { // not sure tho
+    loop: {
       io:puts("1");
       loop
     }
@@ -39,8 +39,8 @@
 
 # Macros
 ```
-< math;
-< io;
+^ math;
+^ io;
 
 @.32 my_macro { math:rand() } 
 
@@ -65,10 +65,21 @@
 }
 ```
 
+```
+^ io/puts;
+0 main {
+  inline_macro: {
+    2 + 2
+  }
+
+  puts(inline_macro); // 4
+}
+```
+
 # Type definitions
 ```
-< io;
-< types;
+^ io;
+^ types;
 
 void main {
   io:puts("Hello world");
@@ -84,14 +95,14 @@ $ f32 = .32;
 
 # Exports
 ```
-< io;
-> 0 prn ("" a, "" b) {
+^ io;
+^ 0 prn ("" a, "" b) {
   io:puts("Hello world");
 }
 ```
 ```
-< io/puts;
-< my_lib/add;
+^ io/puts;
+^ my_lib/add;
 
 0 main {
   io:puts(add(2, 4));
