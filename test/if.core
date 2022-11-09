@@ -5,7 +5,7 @@
     io:puts("the universe works properly");
   } : {
     io:puts("oh no, the end of the world has happened!");
-  };
+  }
   
   io:puts(1 ? "ok" : "not ok");
 

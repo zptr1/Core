@@ -17,7 +17,10 @@ const ErrorTypes = {
   },
 };
 
-let errorHue = 0;
+let gradientHue = 0;
+function gradient() {
+  return rgb(...hsv2rgb((gradientHue += 10), 65, 85));
+}
 
 export class CError {
   constructor(message) {
@@ -52,7 +55,6 @@ export class CError {
       span: span ? [span[0] - 1, span[1] - 1] : null,
       extra,
       type,
-      color: rgb(...hsv2rgb((errorHue += 10), 65, 85)),
     });
     return this;
   }
@@ -102,7 +104,23 @@ export class CError {
 
       const spans = group
         .filter((x) => x.span)
-        .sort((a, b) => a.span[0] - b.span[0]);
+        .filter(
+          (x, i, a) =>
+            !a.some(
+              (y, j) =>
+                j < i &&
+                y.span[0] == x.span[0] &&
+                y.span[1] == x.span[1]
+            )
+        )
+        .sort((a, b) => a.span[0] - b.span[0])
+        .reduce((p, c) => {
+          p.length > 0 && p.at(-1).extra == c.extra
+            ? (p.at(-1).span[1] = c.span[1])
+            : p.push(c);
+
+          return p;
+        }, []);
 
       const dup = [];
 
@@ -113,18 +131,19 @@ export class CError {
         if (dup.includes(span.span.join(","))) continue;
         dup.push(span.span.join(","));
 
+        const color = gradient();
         out.push(
           " " +
             " ".repeat(padding) +
             primary(" ┃") +
             " ".repeat(span.span[0] + 1) +
-            span.color("^" + "Ⲻ".repeat(size)) +
+            color("^" + "Ⲻ".repeat(size)) +
             ` ${
-              size + span.extra.length > 50
+              size + span.extra.length > 40
                 ? `\n ${" ".repeat(padding)} ${primary("┃")} ${" ".repeat(
                     span.span[0]
-                  )}${span.color(span.extra)}`
-                : span.color(span.extra)
+                  )}${color(span.extra)}`
+                : color(span.extra)
             }`
         );
       }
