@@ -7,12 +7,10 @@ class Ast {
 }
 
 export class TopLevel extends Ast {
-  constructor(imports = [], variables = [], functions = []) {
+  constructor(expr = []) {
     super();
 
-    this.imports = imports;
-    this.variables = variables;
-    this.functions = functions;
+    this.expr = expr;
   }
 }
 
@@ -36,12 +34,13 @@ export class Var extends Ast {
 }
 
 export class Fn extends Ast {
-  constructor(span, type, name, expr = []) {
+  constructor(span, type, name, expr = [], macro = false) {
     super(span);
 
     this.type = type;
     this.name = name;
     this.expr = expr;
+    this.macro = macro;
   }
 }
 
@@ -73,10 +72,27 @@ export class Atom extends Ast {
 }
 
 export class IfInner extends Ast {
-  constructor (span, ifTrue, ifFalse) {
+  constructor(span, ifTrue, ifFalse) {
     super(span);
 
     this.ifTrue = ifTrue;
     this.ifFalse = ifFalse;
+  }
+}
+
+export class Block extends Ast {
+  constructor (span, expr = [], hasResult = false) {
+    super(span);
+
+    this.expr = expr;
+    this.hasResult = hasResult;
+  }
+}
+
+export class List extends Ast {
+  constructor (span, list = []) {
+    super(span);
+
+    this.list = list;
   }
 }

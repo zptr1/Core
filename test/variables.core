@@ -1,0 +1,18 @@
+^ io;
+
+32 COOL_NUMBER = 69420; // const
+*8 TEST = 0;            // mutable
+
+0 main {
+  TEST = 1;
+  
+  *"" name = "";
+  
+  name = io:prompt("Enter your name: ");
+
+  io:puts("Hello, " + name + "!");
+  io:puts("COOL_NUMBER = " + COOL_NUMBER:as_str());
+  io:puts("TEST = " + TEST:as_str());
+
+  *32 qwe;
+}

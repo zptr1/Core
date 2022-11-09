@@ -29,7 +29,7 @@ However, feel free to contribute if you'd like to!
 * [x] macros
 * [x] mutable variables
 * [ ] type declarations
-* [ ] list variables
+* [ ] arrays
 * [ ] function arguments
 * [ ] loops (aka inline macros)
 * [ ] idk i forgor
