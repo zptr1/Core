@@ -1,4 +1,4 @@
-import { AtomTypes, Op, OpTokenMap, Token, Types } from "./constants.js";
+import { AtomTypes, Op, OpTokenMap, Token } from "./constants.js";
 import { CError, handleErrors } from "./errors.js";
 import {
   Atom,
@@ -11,7 +11,6 @@ import {
   Import,
   List,
   TopLevel,
-  Type,
   Var,
 } from "./ast.js";
 import lineColumn from "line-column";
@@ -50,14 +49,14 @@ export class Parser {
     return this.peek(0) || this.peek(-1);
   }
 
-  *read() {
+  *iter() {
     let c;
     while ((c = this.next())) yield c;
   }
 
   span(token) {
     const lc = lineColumn(this.src);
-    const span = (token || this.current()).span.map((x) => lc.fromIndex(x - 1));
+    const span = (token?.span || this.current()?.span || []).map((x) => lc.fromIndex(x - 1));
     return [span[0]?.line - 1, [span[0]?.col, span[1]?.col]];
   }
 
@@ -151,7 +150,8 @@ export class Parser {
       case Token.String:
         this.next();
         const atom = new Atom(token.span, formatType(token.kind), token.value);
-        if (this.peek(2)?.kind == Token.Colon) {
+        if (this.peek()?.kind == Token.Dot) {
+          this.next();
           return this.readIdentifier(atom);
         } else {
           return atom;
@@ -169,7 +169,7 @@ export class Parser {
     }
   }
 
-  readIdentifier() {
+  readIdentifier(callable = true) {
     const path = [...arguments];
     const start = this.peek().span[0];
     let token;
@@ -179,77 +179,61 @@ export class Parser {
 
       path.push(this.next().value);
 
-      if (this.peek().kind == Token.LParen) {
+      if (callable && this.peek().kind == Token.LParen) {
         this.next();
         path.push([this.readParentheses()]);
 
         if (this.peek()?.kind != Token.Colon) break;
         this.next();
-      } else if (this.peek().kind != Token.Colon) break;
+      } else if (this.peek().kind != Token.Dot) break;
       else this.next();
     }
 
-    return new Identifier([start, this.current().span[1]], path);
+    return new Identifier([start, this.current()?.span?.[1]], path);
   }
 
-  readVar(token, mut = false) {
-    if (token instanceof Identifier)
-      this.i--;
+  readVar(mutable = false) {
+    const name = this.readIdentifier();
+    const variable = new Var();
 
-    const name = this.next();
+    variable.name = name;
+    variable.mutable = mutable;
+
+    if (this.peek().kind == Token.Colon) {
+      this.next();
+      variable.type = this.readType();
+    }
 
     if (this.peek()?.kind != Token.Semicolon) {
       if (this.next()?.kind != Token.Equals) {
-        new CError("invalid syntax")
+        return new CError("invalid syntax")
           .src(this.file, this.src)
           .ln(...this.span(this.current()), 'expected "="')
           .raise();
       } else {
-        const value = this.readExpr();
-
-        if (!value)
-          new CError("invalid syntax")
-            .src(this.file, this.src)
-            .ln(...this.span(this.current()), "expected expression")
-            .raise();
-        else
-          return new Var(
-            [token.span[0] - mut, name.span[1]],
-            token instanceof Identifier
-              ? token
-              : formatType(token.kind, token.value),
-            name.value,
-            value,
-            mut
-          );
+        variable.value = this.readExpr();
       }
-    } else if (!mut) {
-      new CError("invalid expression")
+    } else if (!mutable) {
+      return new CError("invalid expression")
         .src(this.file, this.src)
         .ln(
           ...this.span(this.peek()),
           "immutable variables must be declared with a value"
         )
         .raise();
-    } else if (token.kind == Token.Tilde) {
-      new CError("invalid expression")
+    } else if (!variable.type) {
+      return new CError("invalid expression")
         .src(this.file, this.src)
         .ln(
           ...this.span(this.peek()),
           "variables with no initial value must have a specified type"
         )
         .raise();
-    } else {
-      return new Var(
-        [token.span[0] - mut, name.span[1]],
-        token instanceof Identifier
-          ? token
-          : formatType(token.kind, token.value),
-        name.value,
-        null,
-        mut
-      );
     }
+
+    variable.span = [name.span?.[0], this.current()?.span?.[1]];
+    
+    return variable;
   }
 
   readParentheses() {
@@ -302,22 +286,17 @@ export class Parser {
   readExpr() {
     const token = this.next();
 
-    if (Types.includes(token.kind) && this.peek()?.kind == Token.Identifier) {
-      return this.readVar(
-        token.kind == Token.Identifier
-          ? this.readIdentifier(token.value)
-          : token
-      );
+    if (
+      token.kind == Token.Identifier &&
+      [Token.Colon, Token.Equals, Token.Semicolon].includes(this.peek()?.kind)
+    ) {
+      this.i--;
+      return this.readVar();
     } else if (
       token.kind == Token.Asterisk &&
-      Types.includes(this.peek()?.kind) &&
-      this.peek(2)?.kind == Token.Identifier
+      this.peek()?.kind == Token.Identifier
     ) {
-      const type = this.next();
-      return this.readVar(
-        type.kind == Token.Identifier ? this.readIdentifier(type.value) : type,
-        true
-      );
+      return this.readVar(true);
     } else if (AtomTypes.includes(token.kind)) {
       this.i--;
       const e = this.readAdd();
@@ -374,7 +353,14 @@ export class Parser {
         return e;
       }
     } else if (token.kind == Token.LParen) {
-      return this.readParentheses();
+      const expr = this.readParentheses();
+
+      if (this.peek()?.kind == Token.Dot) {
+        this.next();
+        return this.readIdentifier(expr);
+      }
+
+      return expr;
     } else if (token.kind == Token.RParen) {
       new CError("invalid syntax")
         .src(this.file, this.src)
@@ -462,42 +448,29 @@ export class Parser {
         break;
       }
 
-      const type = this.next();
+      const name = this.next();
 
-      if (!Types.includes(type.kind)) {
+      if (name?.kind != Token.Identifier) {
         new CError("invalid syntax")
           .src(this.file, this.src)
-          .ln(...this.span(type), `expected type, got ${Token[type.kind]}`)
+          .ln(...this.span(name), `expected identifier`)
           .raise();
       } else {
         const arg = new FnArg();
+        arg.name = name.value;
 
-        arg.type =
-          type.kind == Token.Identifier
-            ? this.readIdentifier(type.value)
-            : formatType(type.kind, type.value);
-        
-        if (arg.type instanceof Identifier)
-          this.i--;
-
-        const name = this.next();
-
-        if (name.kind != Token.Identifier) {
-          new CError("invalid syntax")
-            .src(this.file, this.src)
-            .ln(...this.span(name), "expected identifier")
-            .raise();
-        } else {
-          arg.name = name.value;
-
-          if (this.peek()?.kind == Token.Equals) {
-            this.next();
-            arg.defaultValue = this.readExpr();
-          }
-
-          arg.span = [type.span?.[0], this.current()?.span?.[1]];
-          list.list.push(arg);
+        if (this.peek()?.kind == Token.Colon) {
+          this.next();
+          arg.type = this.readType();
         }
+
+        if (this.peek()?.kind == Token.Equals) {
+          this.next();
+          arg.defaultValue = this.readExpr();
+        }
+
+        arg.span = [name.span?.[0], this.current()?.span?.[1]];
+        list.list.push(arg);
       }
 
       if (!this.peek()) {
@@ -533,93 +506,81 @@ export class Parser {
     return list;
   }
 
-  readFunc(type, macro = false) {
-    if (type instanceof Identifier)
-      this.i--;
-    
+  readFunc(macro = false) {
     const func = new Fn();
-    const start = this.current();
+    const name = this.readIdentifier(false);
 
-    const name = this.next();
-    const token = this.next();
-
-    func.type = type;
     func.name = name;
     func.macro = macro;
 
-    if (token.kind == Token.LParen) {
+    if (this.peek()?.kind == Token.LParen) {
+      this.next();
+      
       if (func.macro) {
-        new CError("invalid expression")
+        return new CError("invalid expression")
           .src(this.file, this.src)
-          .ln(...this.span(token), "macro function cannot have arguments")
+          .ln(...this.span(), "macro function cannot have arguments")
           .raise();
-      } else {
-        func.args = this.readFuncArgs();
-
-        if (this.next()?.kind != Token.LCurly)
-          return new CError("invalid syntax")
-            .src(this.file, this.src)
-            .ln(...this.span(token), `expected LCurly`)
-            .raise();
-
-        func.expr = this.readBlock();
       }
-    } else if (token.kind == Token.LCurly) {
+      
+      func.args = this.readFuncArgs();
+    }
+
+    if (this.peek()?.kind == Token.RArrow) {
+      this.next();
+      func.type = this.readType();
+    }
+
+    if (this.peek()?.kind == Token.LCurly) {
+      this.next();
       func.expr = this.readBlock();
-    } else
+    }
+
+    if (!func.expr)
       return new CError("invalid syntax")
         .src(this.file, this.src)
-        .ln(...this.span(token), `expected LParen or LCurly`)
+        .ln(...this.span(), `expected block`)
         .raise();
 
-    func.span = [start.span[0] - macro, this.current()?.span?.[1]];
+    func.span = [name?.span?.[0], this.current()?.span?.[1]];
 
     return func;
   }
 
   readType() {
-    const type = new Type();
-    const start = this.current();
-    const name = this.next();
-    
-    if (name?.kind != Token.Identifier) {
-      return new CError("invalid syntax")
-        .src(this.file, this.src)
-        .ln(...this.span(name), 'expected Identifier')
-        .raise();
-    }
+    const token = this.peek();
 
-    if (this.next()?.kind != Token.Equals) {
-      return new CError("invalid syntax")
-        .src(this.file, this.src)
-        .ln(...this.span(), "expected '='")
-        .raise();
-    }
-
-    type.name = name.value;
-    type.value = this.readExpr();
-    type.span = [start.span?.[0], this.current()?.span?.[1]];
-
-    return type;
+    // todo: union and tuple types
+    if (token.kind == Token.String) {
+      this.next();
+      return "str";
+    } else if (token.kind == Token.Int && token.value == 0) {
+      this.next();
+      return "void";
+    } else if (token.kind == Token.Int) {
+      this.next();
+      return `i${token.value}`;
+    } else if (token.kind == Token.Float) {
+      this.next();
+      return `f${token.value}`;
+    } else if (token.kind == Token.Identifier) return this.readIdentifier();
   }
 
   readImport() {
     const imp = new Import();
     const start = this.current();
 
-    for (const token of this.read()) {
-      if (token.kind == Token.Identifier || token.kind == Token.String)
+    for (const token of this.iter()) {
+      if (token.kind == Token.Identifier || token.kind == Token.String) {
         imp.path.push(token.value);
-      else if (token.kind != Token.Slash)
-        new CError("invalid syntax")
+      } else {
+        new CError("invalid expression")
           .src(this.file, this.src)
-          .ln(
-            ...this.span(token),
-            `unexpected ${Token[token.kind]} in import statement`
-          )
+          .ln(...this.span(token), `unexpected ${Token[token.kind]}`)
           .raise();
+      }
 
-      if (this.peek()?.kind == Token.Semicolon) break;
+      if (this.peek()?.kind != Token.Slash) break;
     }
 
     imp.span = [start.span[0], this.current().span[1]];
@@ -629,19 +590,20 @@ export class Parser {
   readTopLevel() {
     const token = this.next();
 
-    if (Types.includes(token.kind) && this.peek()?.kind == Token.Identifier) {
+    if (token.kind == Token.Identifier) {
+      const peek = this.peek();
+
       if (
-        !this.peek(2) ||
-        this.peek(2).kind == Token.Equals ||
-        this.peek(2).kind == Token.Semicolon
+        !peek ||
+        [Token.Colon, Token.Equals, Token.Semicolon].includes(peek.kind)
       ) {
-        return this.readVar(
-          token.kind == Token.Identifier ? this.readIdentifier(token) : token
-        );
-      } else if ([Token.LParen, Token.LCurly].includes(this.peek(2)?.kind)) {
-        return this.readFunc(
-          token.kind == Token.Identifier ? this.readIdentifier(token) : token
-        );
+        this.i--; // needed for readIdentifier
+        return this.readVar();
+      } else if (
+        [Token.LParen, Token.RArrow, Token.LCurly].includes(peek?.kind)
+      ) {
+        this.i--;
+        return this.readFunc();
       } else {
         return new CError("invalid syntax")
           .src(this.file, this.src)
@@ -649,28 +611,16 @@ export class Parser {
       }
     } else if (
       token.kind == Token.Asterisk &&
-      Types.includes(this.peek()?.kind) &&
-      this.peek(2)?.kind == Token.Identifier
+      this.peek()?.kind == Token.Identifier
     ) {
-      const type = this.next();
-      return this.readVar(
-        type.kind == Token.Identifier ? this.readIdentifier(type) : type,
-        true
-      );
+      return this.readVar(true);
     } else if (
       token.kind == Token.At &&
-      Types.includes(this.peek()?.kind) &&
-      this.peek(2)?.kind == Token.Identifier
+      this.peek()?.kind == Token.Identifier
     ) {
-      const type = this.next();
-      return this.readFunc(
-        type.kind == Token.Identifier ? this.readIdentifier(type) : type,
-        true
-      );
+      return this.readFunc(true);
     } else if (token.kind == Token.Caret) {
       return this.readImport();
-    } else if (token.kind == Token.Dollar) {
-      return this.readType();
     } else {
       return new CError("invalid syntax")
         .src(this.file, this.src)

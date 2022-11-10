@@ -1,15 +1,16 @@
 ^ io;
 
-0 main {
+main {
   2 == 2 ? {
-    io:puts("the universe works properly");
+    io.puts("the universe works properly");
   } : {
-    io:puts("oh no, the end of the world has happened!");
+    io.puts("oh no, the end of the world has happened!");
   }
   
-  io:puts(1 ? "ok" : "not ok");
+  io.puts(1 ? "ok" : "not ok");
 
-  32 a = 10;
-  32 b = 5;
-  a > b ? io:puts("a is bigger than b");
+  a = 10;
+  b = 5;
+
+  a > b ? io.puts("a is bigger than b");
 }

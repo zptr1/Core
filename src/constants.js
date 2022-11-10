@@ -36,11 +36,13 @@ export const Token = Enum(
 
   "Assert",
   "DoubleEq",
+  "LArrow",
+  "RArrow",
   "NotEq",
   "LtEq",
   "GtEq",
   "And",
-  "Or"
+  "Or",
 );
 
 export const Op = Enum(
@@ -56,8 +58,7 @@ export const Op = Enum(
   "NotEq",
   "And",
   "Or",
-  "If",
-  "Set"
+  "If"
 );
 
 export const OpTokenMap = {
@@ -111,5 +112,9 @@ export const CharTokenMap = {
   "?": Token.Question,
 };
 
-export const AtomTypes = [Token.Int, Token.Float, Token.String, Token.Identifier];
-export const Types = [...AtomTypes, Token.Tilde];
+export const AtomTypes = [
+  Token.Int,
+  Token.Float,
+  Token.String,
+  Token.Identifier,
+];

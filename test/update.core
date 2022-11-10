@@ -1,0 +1,17 @@
+^ io;
+
+TEXT = "Hello world";  // immutable variable
+*FUNNY_NUMBER = 69;    // mutable variable
+
+@str { "" }
+
+add (a: 32, b: 32 = FUNNY_NUMBER) -> 32 {
+  a + b
+}
+
+main {
+  *name: str; // using macros as type 
+
+  FUNNY_NUMBER = 420;
+  io.puts(FUNNY_NUMBER.as_str());
+}

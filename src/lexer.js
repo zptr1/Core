@@ -190,6 +190,12 @@ export default class Lexer {
       } else if (char == "!" && next == "=") {
         this.token(Token.NotEq);
         this.next();
+      } else if (char == "<" && next == "-") {
+        this.token(Token.LArrow);
+        this.next();
+      } else if (char == "-" && next == ">") {
+        this.token(Token.RArrow);
+        this.next();
       } else if (char == '"') this.readString();
       else if (char.match(/\d/) || (char == "." && next.match(/\d/)))
         this.readNumber();

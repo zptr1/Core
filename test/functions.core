@@ -1,14 +1,14 @@
 ^ io;
 
-32 add (32 a, 32 b = 6 + 9) {
+add (a: 32, b = 6 + 9) {
   a + b
 }
 
-@"" my_macro {
+@ my_macro {
   "Hello, World!"
 }
 
-0 main {
-  io:puts(my_macro);
-  io:puts(add(2, 4));
+main {
+  io.puts(my_macro!);
+  io.puts(add(2, 4));
 }

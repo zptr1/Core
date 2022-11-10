@@ -9,10 +9,11 @@ However, feel free to contribute if you'd like to!
 ## Milestones
 
 - [x] Lexer
-- [x] Error Formatting
+- [x] Error Formatter
 - [ ] Parser (WIP)
-- [ ] Type Checking
-- [ ] Compiler
+- [ ] HIR
+- [ ] Type Checker
+- [ ] LLVM IR
 - [ ] Standard Library
 - [ ] Package Manager
 - [ ] Optimized
@@ -29,37 +30,40 @@ However, feel free to contribute if you'd like to!
 * [x] macros
 * [x] mutable variables
 * [x] function arguments
-* [ ] type declarations
+* ~~[ ] type declarations~~
+* [ ] inline macro declarations
 * [ ] arrays
-* [ ] loops (aka inline macros)
 * [ ] idk i forgor
 
 ## Examples
 
 ```
 ^ io;
-0 main {
-  io:puts("Hello, World!");
+
+main {
+  io.puts("Hello, World!");
 }
 ```
 
 ```
 ^ io;
-0 main {
-  "" name = io:prompt("Enter your name: ");
-  32 age = io:prompt("Enter your age: "):as_i32();
 
-  io:puts("Hello, " + name + "!");
+main {
+  name = io.prompt("Enter your name: ");
+  age = io.prompt("Enter your age: ").as_i32();
+
+  io.puts("Hello, " + name + "!");
 }
 ```
 
 ```
 ^ io;
-0 main {
-  16 i = 0;
 
-  a: {
-    io:puts((i++):as_str());
+main {
+  *i = 0;
+
+  @a {
+    io.puts((i++).as_str());
     i < 100 ? a;
   }
 }

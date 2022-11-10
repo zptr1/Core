@@ -107,12 +107,3 @@ export class FnArg extends Ast {
     this.defaultValue = defaultValue;
   }
 }
-
-export class Type extends Ast {
-  constructor (span, name, value) {
-    super(span);
-
-    this.name = name;
-    this.value = value;
-  }
-}

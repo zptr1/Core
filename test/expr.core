@@ -1,5 +1,5 @@
 ^ io;
-0 main {
-  io:puts(2 + "asd" + qwe + "hi");
-  io:puts(1 + 2 + 4 * 8 / (6 - 1));
+
+main {
+  io.puts(1 + 2 + 4 * 8 / (6 - 1));
 }

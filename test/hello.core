@@ -1,4 +1,5 @@
 ^ io;
-0 main {
-  io:puts("Hello world");
+
+main {
+  io.puts("Hello world");
 }
